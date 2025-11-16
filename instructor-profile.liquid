@@ -1,0 +1,1431 @@
+{% comment %}
+  Instructor Profile Section
+  Professional template optimized for user experience and conversion
+{% endcomment %}
+
+{% comment %} Load instructor from metaobject {% endcomment %}
+{% if section.settings.metaobject_handle != blank %}
+  {% assign instructor = shop.metaobjects.instructors[section.settings.metaobject_handle] %}
+{% else %}
+  {% assign instructor = metaobject %}
+{% endif %}
+
+{% comment %} Validate instructor exists {% endcomment %}
+{% unless instructor %}
+  {% assign instructor_missing = true %}{% endunless %}
+
+{% comment %} Safe metafield assignments with guards {% endcomment %}
+{% assign specialties = instructor.specialties.value | default: nil %}
+{% assign languages = instructor.languages.value | default: nil %}{% assign levels = instructor.instructor_levels.value | default: nil %}
+
+{% comment %} Check for available data {% endcomment %}
+{% assign has_specialties = false %}
+{% if specialties.size > 0 %}
+  {% assign has_specialties = true %}
+{% endif %}
+
+{% assign has_languages = false %}
+{% if languages.size > 0 %}
+  {% assign has_languages = true %}
+{% endif %}
+
+{% assign has_levels = false %}
+{% if levels.size > 0 %}
+  {% assign has_levels = true %}{% endif %}
+
+{% comment %} Normalize website URLs {% endcomment %}
+{% assign website_url = nil %}
+{% if instructor.website != blank %}
+  {% assign website_url = instructor.website | strip %}
+{% endif %}
+
+{% assign website_new_url = nil %}
+{% if instructor.website_new != blank %}
+  {% assign website_new_url = instructor.website_new | strip %}
+{% endif %}
+
+{% assign has_contact = false %}
+{% if instructor.email != blank or instructor.phone_number != blank or website_url or website_new_url %}
+  {% assign has_contact = true %}{% endif %}
+
+{% comment %} Normalize social URLs {% endcomment %}
+{% assign instagram_url = nil %}
+{% if instructor.instagram != blank %}
+  {% assign instagram_clean = instructor.instagram | strip %}
+  {% if instagram_clean contains '://' %}
+    {% assign instagram_url = instagram_clean %}
+  {% else %}
+    {% assign instagram_url = 'https://instagram.com/' | append: instagram_clean %}
+  {% endif %}
+{% endif %}
+
+{% assign facebook_url = nil %}
+{% if instructor.facebook != blank %}
+  {% assign facebook_clean = instructor.facebook | strip %}
+  {% if facebook_clean contains '://' %}
+    {% assign facebook_url = facebook_clean %}
+  {% else %}
+    {% assign facebook_url = 'https://facebook.com/' | append: facebook_clean %}
+  {% endif %}
+{% endif %}
+
+{% assign youtube_url = nil %}
+{% if instructor.youtube != blank %}
+  {% assign youtube_clean = instructor.youtube | strip %}
+  {% if youtube_clean contains '://' %}
+    {% assign youtube_url = youtube_clean %}
+  {% else %}
+    {% assign youtube_url = 'https://youtube.com/' | append: youtube_clean %}
+  {% endif %}
+{% endif %}
+
+{% assign linkedin_url = nil %}
+{% if instructor.linkedin != blank %}
+  {% assign linkedin_clean = instructor.linkedin | strip %}
+  {% if linkedin_clean contains '://' %}
+    {% assign linkedin_url = linkedin_clean %}
+  {% else %}
+    {% assign linkedin_url = 'https://linkedin.com/in/' | append: linkedin_clean %}
+  {% endif %}
+{% endif %}
+
+{% assign tiktok_url = nil %}
+{% if instructor.tiktok != blank %}
+  {% assign tiktok_clean = instructor.tiktok | strip %}
+  {% if tiktok_clean contains '://' %}
+    {% assign tiktok_url = tiktok_clean %}
+  {% else %}
+    {% assign tiktok_url = 'https://tiktok.com/@' | append: tiktok_clean %}
+  {% endif %}{% endif %}
+
+{% comment %} Check if any social link exists (excluding website fields) {% endcomment %}
+{% assign has_social = false %}
+{% if instagram_url or facebook_url or youtube_url or linkedin_url or tiktok_url %}
+  {% assign has_social = true %}
+{% endif %}
+
+{% comment %} Clean phone number for tel: link {% endcomment %}
+{% if instructor.phone_number != blank %}
+  {% assign phone_clean = instructor.phone_number | replace: '(', '' | replace: ')', '' | replace: ' ', '' | replace: '-', '' | replace: '.', '' | strip %}
+{% endif %}
+
+{% if instructor_missing %}
+  <div class="instructor-profile instructor-profile--error">
+    <div class="instructor-profile__container">
+      <div class="instructor-profile__error">
+        <p>Instructor profile data is not available.</p>
+      </div>
+    </div>
+  </div>
+{% else %}
+
+  <div
+    class="instructor-profile"
+    data-section-id="{{ section.id }}"
+    data-section-type="instructor-profile">
+
+    {% comment %} Hero Section - Primary Information {% endcomment %}
+    <section class="instructor-profile__hero" style="padding-top: {{ section.settings.hero_padding_top }}px; padding-bottom: {{ section.settings.hero_padding_bottom }}px;">
+      <div class="instructor-profile__container">
+        <div class="instructor-profile__hero-grid">
+
+          {% comment %} Profile Image with Social Links {% endcomment %}
+          {% if instructor.profile_image != blank %}
+            <div class="instructor-profile__hero-media">
+              <div class="instructor-profile__image-wrapper">
+                <div class="instructor-profile__image-border">
+                  {{- instructor.profile_image | image_url: width: 376 | image_tag: loading: 'eager', fetchpriority: 'high', decoding: 'async', widths: '270, 376', sizes: '(max-width: 749px) 270px, 376px', class: 'instructor-profile__image', alt: instructor.full_name | escape
+                  -}}
+                </div>
+              </div>
+            </div>
+          {% endif %}
+
+          {% comment %} Hero Content - Instructor Information {% endcomment %}
+          <div class="instructor-profile__hero-content">
+            <header class="instructor-profile__hero-header">
+
+              {% comment %} Instructor Level Badges {% endcomment %}
+              {% if has_levels %}
+                <div class="instructor-profile__level-badges">
+                  {% for level in levels %}
+                    <span class="ip-badge ip-badge--level">{{ level | escape }}</span>
+                  {% endfor %}
+                </div>
+              {% endif %}
+
+              {% comment %} Name and Title Group {% endcomment %}
+              <div class="instructor-profile__name-group">
+                {% comment %} Instructor Full Name {% endcomment %}
+                {% if instructor.full_name != blank %}
+                  <h1 class="instructor-profile__name h2">{{ instructor.full_name | escape }}</h1>
+                {% endif %}
+
+                {% comment %} Certification Title {% endcomment %}
+                <p class="instructor-profile__subtitle">Certified Oxygen Advantage® Instructor
+                </p>
+            </div>
+
+              {% comment %} Location Information {% endcomment %}
+              {% assign country_list = instructor.country.value %}
+              {% assign region_list = instructor.region.value %}
+              {% assign city_list = instructor.city.value %}
+              {% if country_list.size > 0 or region_list.size > 0 or city_list.size > 0 %}
+                <div class="instructor-profile__location">
+                  <svg
+                    class="instructor-profile__location-icon"
+                    aria-hidden="true"
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="20"
+                    height="20"
+                    fill="none"
+                    viewBox="0 0 24 24">
+                    <path
+                      stroke="currentColor"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M12 13a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" />
+                    <path
+                      stroke="currentColor"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M17.8 13.938h-.011a7 7 0 1 0-11.464.144h-.016l.14.171c.1.127.2.251.3.371L12 21l5.13-6.248c.194-.209.374-.429.54-.659l.13-.155Z" />
+                  </svg>
+                  <span>
+                    {% if country_list.size > 0 %}
+                      {{ country_list | first | escape }},
+                    {% endif %}
+                    {% if region_list.size > 0 %}
+                      {{ region_list | first | escape }},
+                    {% endif %}
+                    {% if city_list.size > 0 %}
+                      {{ city_list | first | escape }}
+                    {% endif %}
+                  </span>
+                </div>
+              {% endif %}
+
+              {% comment %} Social Media Links {% endcomment %}
+              {% if section.settings.show_social_icons and has_social %}
+                <nav class="instructor-profile__social" aria-label="Social media links">
+                  <ul class="instructor-profile__social-list">
+                    {% if instagram_url %}
+                      <li>
+                        <a
+                          href="{{ instagram_url | escape }}"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          class="instructor-profile__social-link"
+                          aria-label="Follow {{ instructor.full_name | escape }} on Instagram">
+                          <svg
+                            viewBox="0 0 24 24"
+                            fill="currentColor"
+                            aria-hidden="true"
+                            focusable="false">
+                            <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z" />
+                          </svg>
+                        </a>
+                      </li>
+                    {% endif %}
+
+                    {% if facebook_url %}
+                      <li>
+                        <a
+                          href="{{ facebook_url | escape }}"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          class="instructor-profile__social-link"
+                          aria-label="Follow {{ instructor.full_name | escape }} on Facebook">
+                          <svg
+                            viewBox="0 0 24 24"
+                            fill="currentColor"
+                            aria-hidden="true"
+                            focusable="false">
+                            <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
+                          </svg>
+                        </a>
+                      </li>
+                    {% endif %}
+
+                    {% if youtube_url %}
+                      <li>
+                        <a
+                          href="{{ youtube_url | escape }}"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          class="instructor-profile__social-link"
+                          aria-label="Follow {{ instructor.full_name | escape }} on YouTube">
+                          <svg
+                            viewBox="0 0 24 24"
+                            fill="currentColor"
+                            aria-hidden="true"
+                            focusable="false">
+                            <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" />
+                          </svg>
+                        </a>
+                      </li>
+                    {% endif %}
+
+                    {% if linkedin_url %}
+                      <li>
+                        <a
+                          href="{{ linkedin_url | escape }}"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          class="instructor-profile__social-link"
+                          aria-label="Connect with {{ instructor.full_name | escape }} on LinkedIn">
+                          <svg
+                            viewBox="0 0 24 24"
+                            fill="currentColor"
+                            aria-hidden="true"
+                            focusable="false">
+                            <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z" />
+                          </svg>
+                        </a>
+                      </li>
+                    {% endif %}
+
+                    {% if tiktok_url %}
+                      <li>
+                        <a
+                          href="{{ tiktok_url | escape }}"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          class="instructor-profile__social-link"
+                          aria-label="Follow {{ instructor.full_name | escape }} on TikTok">
+                          <svg
+                            viewBox="0 0 24 24"
+                            fill="currentColor"
+                            aria-hidden="true"
+                            focusable="false">
+                            <path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z" />
+                          </svg>
+                        </a>
+                      </li>
+                    {% endif %}
+                  </ul>
+                </nav>
+              {% endif %}
+
+            </header>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    {% comment %} Main Content Section {% endcomment %}
+    <section class="instructor-profile__content">
+      <div class="instructor-profile__container">
+        <div class="instructor-profile__content-grid">
+
+          {% comment %} Main Column {% endcomment %}
+          <div class="instructor-profile__main">
+
+            {% comment %} Biography Card {% endcomment %}
+            {% if instructor.about_bio != blank %}
+              <article class="ip-card ip-card--featured">
+                <header class="ip-card__header">
+                  <div class="ip-card__header-content">
+                    <svg
+                      class="ip-card__icon"
+                      aria-hidden="true"
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="20"
+                      height="20"
+                      fill="none"
+                      viewBox="0 0 24 24">
+                      <path
+                        stroke="currentColor"
+                        stroke-width="2"
+                        d="M7 17v1a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1v-1a3 3 0 0 0-3-3h-4a3 3 0 0 0-3 3Zm8-9a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+                    </svg>
+                    <h2 class="ip-card__title">About Me</h2>
+                  </div>
+                </header>
+
+                <div class="ip-card__content ip-card__content--rich">
+                  <div class="ip-bio">
+                    {{ instructor.about_bio | metafield_tag }}
+                  </div>
+                </div>
+              </article>
+            {% endif %}
+
+            {% comment %} Specialties Card {% endcomment %}
+            {% if has_specialties %}
+              <article class="ip-card">
+                <header class="ip-card__header">
+                  <div class="ip-card__header-content">
+                    <svg
+                      class="ip-card__icon"
+                      aria-hidden="true"
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="20"
+                      height="20"
+                      fill="none"
+                      viewBox="0 0 24 24">
+                      <path
+                        stroke="currentColor"
+                        stroke-linecap="square"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M10 19H5a1 1 0 0 1-1-1v-1a3 3 0 0 1 3-3h2m10 1a3 3 0 0 1-3 3m3-3a3 3 0 0 0-3-3m3 3h1m-4 3a3 3 0 0 1-3-3m3 3v1m-3-4a3 3 0 0 1 3-3m-3 3h-1m4-3v-1m-2.121 1.879-.707-.707m5.656 5.656-.707-.707m-4.242 0-.707.707m5.656-5.656-.707.707M12 8a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+                    </svg>
+                    <h2 class="ip-card__title">Specialties and Backgrounds</h2>
+                  </div>
+                </header>
+
+                <div class="ip-card__content">
+                  <ul class="ip-badge-group">
+                    {% for specialty in specialties %}
+                      <li>
+                        <span class="ip-badge">
+                          <svg
+                            class="ip-badge__icon"
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="20"
+                            height="20"
+                            fill="currentColor"
+                            viewBox="0 0 16 16">
+                            <path d="M14 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1zM2 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2z" />
+                            <path d="M10.97 4.97a.75.75 0 0 1 1.071 1.05l-3.992 4.99a.75.75 0 0 1-1.08.02L4.324 8.384a.75.75 0 1 1 1.06-1.06l2.094 2.093 3.473-4.425z" />
+                          </svg>
+
+                          {{ specialty | escape }}
+                        </span>
+                      </li>
+                    {% endfor %}
+                  </ul>
+                </div>
+              </article>
+            {% endif %}
+
+            {% comment %} Languages Card {% endcomment %}
+            {% if has_languages %}
+              <div class="ip-card">
+                <header class="ip-card__header">
+                  <div class="ip-card__header-content">
+                    <svg
+                      class="ip-card__icon"
+                      viewBox="0 0 20 20"
+                      fill="currentColor"
+                      aria-hidden="true"
+                      focusable="false">
+                      <path
+                        fill-rule="evenodd"
+                        d="M7 2a1 1 0 011 1v1h3a1 1 0 110 2H9.578a18.87 18.87 0 01-1.724 4.78c.29.354.596.696.914 1.026a1 1 0 11-1.44 1.389c-.188-.196-.373-.396-.554-.6a19.098 19.098 0 01-3.107 3.567 1 1 0 01-1.334-1.49 17.087 17.087 0 003.13-3.733 18.992 18.992 0 01-1.487-2.494 1 1 0 111.79-.89c.234.47.489.928.764 1.372.417-.934.752-1.913.997-2.927H3a1 1 0 110-2h3V3a1 1 0 011-1zm6 6a1 1 0 01.894.553l2.991 5.982a.869.869 0 01.02.037l.99 1.98a1 1 0 11-1.79.895L15.383 16h-4.764l-.724 1.447a1 1 0 11-1.788-.894l.99-1.98.019-.038 2.99-5.982A1 1 0 0113 8zm-1.382 6h2.764L13 11.236 11.618 14z"
+                        clip-rule="evenodd" />
+                    </svg>
+                    <h2 class="ip-card__title">Languages</h2>
+                  </div>
+                </header>
+
+                <div class="ip-card__content">
+                  <ul class="ip-badge-group">
+                    {% for language in languages %}
+                      <li>
+                        <span class="ip-badge">
+                          <svg
+                            class="ip-badge__icon"
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="20"
+                            height="20"
+                            fill="currentColor"
+                            viewBox="0 0 16 16">
+                            <path d="M14 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1zM2 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2z" />
+                            <path d="M10.97 4.97a.75.75 0 0 1 1.071 1.05l-3.992 4.99a.75.75 0 0 1-1.08.02L4.324 8.384a.75.75 0 1 1 1.06-1.06l2.094 2.093 3.473-4.425z" />
+                          </svg>
+                          {{ language | escape }}
+                        </span>
+                      </li>
+                    {% endfor %}
+                  </ul>
+                </div>
+              </div>
+            {% endif %}
+
+          </div>
+
+          {% comment %} Sidebar Column {% endcomment %}
+          <aside class="instructor-profile__sidebar">
+
+            {% comment %} Contact Card {% endcomment %}
+            {% if has_contact %}
+              <div class="ip-card ip-card--cta">
+                <header class="ip-card__header">
+                  <div class="ip-card__header-content">
+                    <svg
+                      class="ip-card__icon"
+                      aria-hidden="true"
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="20"
+                      height="20"
+                      fill="none"
+                      viewBox="0 0 24 24">
+                      <path
+                        stroke="currentColor"
+                        stroke-linecap="round"
+                        stroke-width="2"
+                        d="m3.5 5.5 7.893 6.036a1 1 0 0 0 1.214 0L20.5 5.5M4 19h16a1 1 0 0 0 1-1V6a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1Z" />
+                    </svg>
+                    <h2 class="ip-card__title">Get in Touch</h2>
+                  </div>
+                </header>
+
+                <div class="ip-card__content">
+                  <div class="ip-contact-actions">
+                    {% if instructor.email != blank %}
+                      <a
+                        href="mailto:{{ instructor.email }}"
+                        class="ip-action-btn"
+                        aria-label="Email {{ instructor.full_name | escape }}">
+                        <svg
+                          class="ip-action-btn__icon"
+                          aria-hidden="true"
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="20"
+                          height="20"
+                          fill="none"
+                          viewBox="0 0 24 24">
+                          <path
+                            stroke="currentColor"
+                            stroke-linecap="round"
+                            stroke-width="2"
+                            d="m3.5 5.5 7.893 6.036a1 1 0 0 0 1.214 0L20.5 5.5M4 19h16a1 1 0 0 0 1-1V6a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1Z" />
+                        </svg>
+                        <span class="ip-action-btn__content">
+                          <span class="ip-action-btn__label">Email</span>
+                          <span class="ip-action-btn__value">{{ instructor.email }}</span>
+                        </span>
+                        <svg
+                          class="ip-action-btn__arrow"
+                          viewBox="0 0 20 20"
+                          fill="currentColor"
+                          aria-hidden="true"
+                          focusable="false">
+                          <path
+                            fill-rule="evenodd"
+                            d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z"
+                            clip-rule="evenodd" />
+                        </svg>
+                      </a>
+                    {% endif %}
+
+                    {% if instructor.phone_number != blank %}
+                      <a
+                        href="tel:{{ phone_clean }}"
+                        class="ip-action-btn"
+                        aria-label="Phone Number {{ instructor.full_name | escape }}">
+                        <svg
+                          class="ip-action-btn__icon"
+                          aria-hidden="true"
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="20"
+                          height="20"
+                          fill="none"
+                          viewBox="0 0 24 24">
+                          <path
+                            stroke="currentColor"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="m17.0896 13.371 1.1431 1.1439c.1745.1461.3148.3287.4111.5349.0962.2063.1461.4312.1461.6588 0 .2276-.0499.4525-.1461.6587-.0963.2063-.4729.6251-.6473.7712-3.1173 3.1211-6.7739 1.706-9.90477-1.4254-3.13087-3.1313-4.54323-6.7896-1.41066-9.90139.62706-.61925 1.71351-1.14182 2.61843-.23626l1.1911 1.19193c1.1911 1.19194.3562 1.93533-.4926 2.80371-.92477.92481-.65643 1.72741 0 2.38391l1.8713 1.8725c.3159.3161.7443.4936 1.191.4936.4468 0 .8752-.1775 1.1911-.4936.8624-.8261 1.6952-1.6004 2.8382-.4565ZM14 8.98134l5.0225-4.98132m0 0L15.9926 4m3.0299.00002v2.98135" />
+                        </svg>
+                        <span class="ip-action-btn__content">
+                          <span class="ip-action-btn__label">Phone Number</span>
+                          <span class="ip-action-btn__value">{{ instructor.phone_number }}</span>
+                        </span>
+                        <svg
+                          class="ip-action-btn__arrow"
+                          viewBox="0 0 20 20"
+                          fill="currentColor"
+                          aria-hidden="true"
+                          focusable="false">
+                          <path
+                            fill-rule="evenodd"
+                            d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z"
+                            clip-rule="evenodd" />
+                        </svg>
+                      </a>
+                    {% endif %}
+
+                    {% if website_url %}
+                      <a
+                        href="{{ website_url | escape }}"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        class="ip-action-btn"
+                        aria-label="Visit {{ instructor.full_name | escape }} website">
+                        <svg
+                          class="ip-action-btn__icon"
+                          aria-hidden="true"
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="20"
+                          height="20"
+                          fill="none"
+                          viewBox="0 0 24 24">
+                          <path
+                            stroke="currentColor"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M13.213 9.787a3.391 3.391 0 0 0-4.795 0l-3.425 3.426a3.39 3.39 0 0 0 4.795 4.794l.321-.304m-.321-4.49a3.39 3.39 0 0 0 4.795 0l3.424-3.426a3.39 3.39 0 0 0-4.794-4.795l-1.028.961" />
+                        </svg>
+                        <span class="ip-action-btn__content">
+                          <span class="ip-action-btn__label">Website</span>
+                          <span class="ip-action-btn__value">{{ website_url }}</span>
+                        </span>
+                        <svg
+                          class="ip-action-btn__arrow"
+                          viewBox="0 0 20 20"
+                          fill="currentColor"
+                          aria-hidden="true"
+                          focusable="false">
+                          <path
+                            fill-rule="evenodd"
+                            d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z"
+                            clip-rule="evenodd" />
+                        </svg>
+                      </a>
+                    {% endif %}
+
+                    {% if website_new_url %}
+                      <a
+                        href="{{ website_new_url | escape }}"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        class="ip-action-btn"
+                        aria-label="Visit {{ instructor.full_name | escape }} Secondary Website">
+                        <svg
+                          class="ip-action-btn__icon"
+                          aria-hidden="true"
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="20"
+                          height="20"
+                          fill="none"
+                          viewBox="0 0 24 24">
+                          <path
+                            stroke="currentColor"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M13.213 9.787a3.391 3.391 0 0 0-4.795 0l-3.425 3.426a3.39 3.39 0 0 0 4.795 4.794l.321-.304m-.321-4.49a3.39 3.39 0 0 0 4.795 0l3.424-3.426a3.39 3.39 0 0 0-4.794-4.795l-1.028.961" />
+                        </svg>
+                        <span class="ip-action-btn__content">
+                          <span class="ip-action-btn__label">Secondary Website</span>
+                          <span class="ip-action-btn__value">{{ website_new_url }}</span>
+                        </span>
+                        <svg
+                          class="ip-action-btn__arrow"
+                          viewBox="0 0 20 20"
+                          fill="currentColor"
+                          aria-hidden="true"
+                          focusable="false">
+                          <path
+                            fill-rule="evenodd"
+                            d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z"
+                            clip-rule="evenodd" />
+                        </svg>
+                      </a>
+                    {% endif %}
+                  </div>
+                </div>
+              </div>
+            {% endif %}
+
+            {% comment %} Back to Instructors {% endcomment %}
+            <div class="ip-card ip-card--cta">
+
+              <div class="ip-card__content">
+                <div class="ip-contact-actions">
+                  <a
+                    href="/pages/instructors/"
+                    class="ip-action-btn"
+                    aria-label="Back to Instructors">
+                    <svg
+                      class="ip-action-btn__icon"
+                      aria-hidden="true"
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="20"
+                      height="20"
+                      fill="none"
+                      viewBox="0 0 24 24">
+                      <path
+                        stroke="currentColor"
+                        stroke-linecap="round"
+                        stroke-width="2"
+                        d="M4.5 17H4a1 1 0 0 1-1-1 3 3 0 0 1 3-3h1m0-3.05A2.5 2.5 0 1 1 9 5.5M19.5 17h.5a1 1 0 0 0 1-1 3 3 0 0 0-3-3h-1m0-3.05a2.5 2.5 0 1 0-2-4.45m.5 13.5h-7a1 1 0 0 1-1-1 3 3 0 0 1 3-3h3a3 3 0 0 1 3 3 1 1 0 0 1-1 1Zm-1-9.5a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0Z" />
+                    </svg>
+                    <span class="ip-action-btn__content">
+                      <span class="ip-action-btn__value">Back to Instructors</span>
+                    </span>
+                    <svg
+                      class="ip-action-btn__arrow"
+                      viewBox="0 0 20 20"
+                      fill="currentColor"
+                      aria-hidden="true"
+                      focusable="false">
+                      <path
+                        fill-rule="evenodd"
+                        d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z"
+                        clip-rule="evenodd" />
+                    </svg>
+                  </a>
+                </div>
+              </div>
+            </div>
+
+          </aside>
+
+        </div>
+      </div>
+    </section>
+  </div>
+
+{% endif %}
+
+{% comment %} Scoped Styles - Production Ready {% endcomment %}
+{% style %}
+  /* Design System Variables */
+  :root {
+    --ip-brand-primary: #ec1a2a;
+    --ip-brand-primary-hover: #d91625;
+    --ip-brand-navy: #211f44;
+    --ip-brand-navy-hover: #1a1736;
+    --ip-surface: #ffffff;
+    --ip-surface-subdued: #f7f7f7;
+    --ip-background: #f1f1f1;
+    --ip-text: #202223;
+    --ip-text-subdued: #6d7175;
+    --ip-text-disabled: #8c9196;
+    --ip-border: #e1e3e5;
+    --ip-box-shadow: 0 0.3125rem 0.3125rem -0.15625rem rgba(0, 0, 0, 0.03)
+    , 0 0.1875rem 0.1875rem -0.09375rem rgba(0, 0, 0, 0.02)
+    , 0 0.125rem 0.125rem -0.0625rem rgba(0, 0, 0, 0.02)
+    , 0 0.0625rem 0.0625rem -0.03125rem rgba(0, 0, 0, 0.03)
+    , 0 0.03125rem 0.03125rem 0 rgba(0, 0, 0, 0.04)
+    , 0 0 0 0.0625rem rgba(0, 0, 0, 0.06);
+    --ip-space-1: clamp(0.2rem, 0.071vw + 0.186rem, 0.25rem);
+    --ip-space-2: clamp(0.4rem, 0.143vw + 0.371rem, 0.5rem);
+    --ip-space-3: clamp(0.5rem, 0.357vw + 0.429rem, 0.75rem);
+    --ip-space-4: clamp(0.8rem, 0.286vw + 0.743rem, 1rem);
+    --ip-space-5: clamp(1.2rem, 0.071vw + 1.186rem, 1.25rem);
+    --ip-space-6: clamp(1.25rem, 0.357vw + 1.179rem, 1.5rem);
+    --ip-space-8: clamp(1.8rem, 0.286vw + 1.743rem, 2rem);
+    --ip-space-10: clamp(2.25rem, 0.357vw + 2.179rem, 2.5rem);
+    --ip-space-12: clamp(2.5rem, 0.714vw + 2.357rem, 3rem);
+    --ip-radius-sm: 0;
+    --ip-radius-md: 0;
+    --ip-radius-lg: 0;
+    --ip-radius-full: 9999px;
+    --ip-shadow-card: 0 0 0 1px rgba(63, 63, 68, 0.05)
+    , 0 1px 3px 0 rgba(63, 63, 68, 0.15);
+    --ip-shadow-lg: 0 10px 25px -5px rgba(0, 0, 0, 0.1)
+    , 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+    --ip-font-size-sm: clamp(0.7rem, 0.161vw + 0.668rem, 0.8125rem);
+    --ip-font-size-base: clamp(0.8rem, 0.107vw + 0.779rem, 0.875rem);
+    --ip-font-size-md: clamp(0.8rem, 0.286vw + 0.743rem, 1rem);
+    --ip-font-size-lg: clamp(1rem, 0.179vw + 0.964rem, 1.125rem);
+    --ip-transition: 200ms cubic-bezier(0.4, 0, 0.2, 1);
+    --ip-transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* Base Styles */
+  .instructor-profile {
+    line-height: 1.5;
+    color: var(--ip-text);
+  }
+
+  .instructor-profile__container {
+    max-width: 1200px;
+    margin-inline: auto;
+    padding-inline: clamp(var(--ip-space-4), 5vw, var(--ip-space-8));
+  }
+
+  /* Error State */
+  .instructor-profile--error {
+    padding: var(--ip-space-12) 0;
+  }
+
+  .instructor-profile__error {
+    background-color: var(--ip-surface-subdued);
+    border: 2px solid var(--ip-border);
+    border-radius: var(--ip-radius-lg);
+    padding: var(--ip-space-8);
+    text-align: center;
+  }
+
+  .instructor-profile__error p {
+    margin: 0;
+    color: var(--ip-text-subdued);
+    font-size: var(--ip-font-size-md);
+  }
+
+  /* Hero Section */
+  .instructor-profile__hero {
+    background-color: var(--ip-brand-navy);
+    color: var(--ip-surface);
+  }
+
+  .instructor-profile__hero-grid {
+    display: grid;
+    gap: clamp(2rem, 4vw, 3rem);
+    align-items: center;
+  }
+
+  @media (min-width: 990px) {
+    .instructor-profile__hero-grid {
+      grid-template-columns: 320px 1fr;
+      gap: clamp(3rem, 5vw, 4rem);
+    }
+  }
+
+  /* Profile Image Section */
+  .instructor-profile__hero-media {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0;
+    /* No gap needed since social moved to content */
+  }
+
+  .instructor-profile__image-wrapper {
+    position: relative;
+    width: fit-content;
+  }
+
+  .instructor-profile__image-border {
+    position: relative;
+    border-radius: var(--ip-radius-full);
+    padding: 12px;
+    background: var(--ip-surface);
+    box-shadow: var(--ip-shadow-lg);
+  }
+
+  /* Red Arc Accent - Rotated to top */
+  .instructor-profile__image-border::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    border-radius: var(--ip-radius-full);
+    border: 12px solid transparent;
+    border-top-color: var(--ip-brand-primary);
+    pointer-events: none;
+  }
+
+  .instructor-profile__image {
+    border-radius: var(--ip-radius-full);
+    object-fit: cover;
+    aspect-ratio: 1;
+    display: block;
+    transition: transform var(--ip-transition);
+  }
+
+  .instructor-profile__image:hover {
+    transform: scale(1.02);
+  }
+
+  /* Social Links - Now positioned in hero content */
+  .instructor-profile__social {
+    width: 100%;
+  }
+
+  .instructor-profile__social-list {
+    display: flex;
+    gap: var(--ip-space-2);
+    flex-wrap: wrap;
+    justify-content: center;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  @media (min-width: 990px) {
+    .instructor-profile__social-list {
+      justify-content: flex-start;
+    }
+  }
+
+  .instructor-profile__social-list li {
+    margin: 0;
+  }
+
+  .instructor-profile__social-link {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    /* WCAG touch target */
+    height: 44px;
+    /* WCAG touch target */
+    color: var(--ip-surface);
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: var(--ip-radius-md);
+    text-decoration: none;
+    transition: all var(--ip-transition);
+  }
+
+  .instructor-profile__social-link:hover,
+  .instructor-profile__social-link:focus-visible {
+    background: var(--ip-brand-primary);
+    border-color: var(--ip-brand-primary);
+    box-shadow: 0 4px 12px rgba(236, 26, 42, 0.3);
+  }
+
+  .instructor-profile__social-link svg {
+    width: 1.25rem;
+    height: 1.25rem;
+  }
+
+  /* Hero Content - Text Information */
+  .instructor-profile__hero-content {
+    text-align: center;
+  }
+
+  @media (min-width: 990px) {
+    .instructor-profile__hero-content {
+      text-align: left;
+    }
+  }
+
+  .instructor-profile__hero-header {
+    display: flex;
+    flex-direction: column;
+    gap: clamp(1rem, 2vw, 1.5rem);
+  }
+
+  /* Level Badges Container */
+  .instructor-profile__level-badges {
+    display: flex;
+    gap: var(--ip-space-2);
+    flex-wrap: wrap;
+    justify-content: center;
+    margin: 0;
+  }
+
+  @media (min-width: 990px) {
+    .instructor-profile__level-badges {
+      justify-content: flex-start;
+    }
+  }
+
+  /* Name and Title Group - Tight spacing */
+  .instructor-profile__name-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  /* Instructor Name - Uses theme's h2 styling */
+  .instructor-profile__name {
+    line-height: 1.2;
+    margin: 0;
+    text-transform: uppercase;
+  }
+
+  /* Certification Subtitle */
+  .instructor-profile__subtitle {
+    font-size: var(--ip-font-size-md);
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.9);
+    line-height: 1.4;
+    margin: 0;
+  }
+
+  /* Location Information */
+  .instructor-profile__location {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--ip-space-2);
+    color: var(--ip-brand-primary);
+    font-size: var(--ip-font-size-md);
+    font-weight: 500;
+  }
+
+  @media (min-width: 990px) {
+    .instructor-profile__location {
+      justify-content: flex-start;
+    }
+  }
+
+  .instructor-profile__location-icon {
+    width: 1.25rem;
+    height: 1.25rem;
+    flex-shrink: 0;
+  }
+
+  /* Content Section */
+  .instructor-profile__content {
+    background-color: var(--ip-background);
+    padding-block: var(--ip-space-12);
+  }
+
+  .instructor-profile__content-grid {
+    display: grid;
+    gap: var(--ip-space-6);
+  }
+
+  @media (min-width: 990px) {
+    .instructor-profile__content-grid {
+      grid-template-columns: 1fr 400px;
+      gap: var(--ip-space-6);
+      align-items: start;
+    }
+  }
+
+  .instructor-profile__main,
+  .instructor-profile__sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ip-space-6);
+  }
+
+  /* Card Component */
+  .ip-card {
+    background-color: var(--ip-surface);
+    box-shadow: var(--ip-box-shadow);
+    border-radius: var(--ip-radius-lg);
+    overflow: hidden;
+    transition: all var(--ip-transition);
+  }
+
+  .ip-card--featured {
+    box-shadow: 0 0 0 1px var(--ip-brand-primary), var(--ip-shadow-card);
+  }
+
+  .ip-card--cta {
+    background: linear-gradient(135deg, #fffcfc 0%, var(--ip-surface) 100%);
+  }
+
+  .ip-card__header {
+    padding: var(--ip-space-5);
+    border-bottom: 1px solid var(--ip-border);
+    background-color: var(--ip-surface-subdued);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .ip-card__header-content {
+    display: flex;
+    align-items: center;
+    gap: var(--ip-space-3);
+  }
+
+  .ip-card__icon {
+    width: 1.25rem;
+    height: 1.25rem;
+    color: var(--ip-brand-primary);
+    flex-shrink: 0;
+  }
+
+  .ip-card__title {
+    font-size: var(--ip-font-size-lg);
+    font-weight: 600;
+    color: var(--ip-brand-navy);
+    margin: 0;
+  }
+
+  .ip-card__content {
+    padding: var(--ip-space-5);
+  }
+
+  .ip-card__content--rich {
+    padding: var(--ip-space-6);
+  }
+
+  /* Badge Component */
+  .ip-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--ip-space-2);
+    padding: var(--ip-space-1) var(--ip-space-2);
+    background-color: var(--ip-surface-subdued);
+    border: 1px solid var(--ip-border);
+    border-radius: var(--ip-radius-md);
+    font-size: var(--ip-font-size-base);
+    line-height: 1.2;
+    font-weight: 500;
+    color: var(--ip-text);
+    transition: all var(--ip-transition-fast);
+  }
+
+  .ip-badge__icon {
+    width: 1rem;
+    height: 1rem;
+    color: var(--ip-brand-primary);
+    flex-shrink: 0;
+  }
+
+  /* Level Badge Variant - Red Background */
+  .ip-badge--level {
+    background-color: var(--ip-brand-primary);
+    border-color: var(--ip-brand-primary);
+    color: var(--ip-surface);
+    font-size: clamp(0.75rem, 0.7rem + 0.25vw, 0.8125rem);
+    font-weight: 600;
+  }
+
+  /* Count Badge Variant */
+  .ip-badge--count {
+    background-color: var(--ip-brand-primary);
+    color: var(--ip-surface);
+    padding: var(--ip-space-1) var(--ip-space-3);
+    border-radius: var(--ip-radius-full);
+    font-size: var(--ip-font-size-sm);
+    font-weight: 600;
+    min-width: 1.4rem;
+    height: 1.4rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    border: none;
+    flex-shrink: 0;
+  }
+
+  /* Badge Group Container */
+  .ip-badge-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--ip-space-2);
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .ip-badge-group li {
+    margin: 0;
+  }
+
+  /* Biography Content */
+  .ip-bio {
+    font-size: var(--ip-font-size-md);
+    line-height: 1.75;
+    color: var(--ip-text);
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    word-break: break-word;
+  }
+
+  .ip-bio > p:first-of-type {
+    font-size: var(--ip-font-size-lg);
+    font-weight: 500;
+    line-height: 1.65;
+  }
+
+  .ip-bio p {
+    margin-bottom: var(--ip-space-4);
+  }
+
+  .ip-bio p:last-child {
+    margin-bottom: 0;
+  }
+
+  .ip-bio ul,
+  .ip-bio ol {
+    margin-bottom: var(--ip-space-4);
+    padding-left: var(--ip-space-6);
+  }
+
+  .ip-bio li {
+    margin-bottom: var(--ip-space-2);
+    color: var(--ip-text-subdued);
+  }
+
+  .ip-bio li::marker {
+    color: var(--ip-brand-primary);
+  }
+
+  .ip-bio strong {
+    font-weight: 600;
+    color: var(--ip-text);
+  }
+
+  .ip-bio a {
+    color: var(--ip-brand-primary);
+    text-decoration: underline;
+    word-break: break-all;
+    overflow-wrap: break-word;
+    hyphens: auto;
+    transition: color var(--ip-transition-fast);
+  }
+
+  .ip-bio a:hover {
+    color: var(--ip-brand-primary-hover);
+  }
+
+  /* Contact Action Buttons */
+  .ip-contact-actions {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ip-space-3);
+  }
+
+  .ip-action-btn {
+    display: flex;
+    align-items: center;
+    gap: var(--ip-space-3);
+    padding: var(--ip-space-4);
+    background-color: var(--ip-surface);
+    border: 2px solid var(--ip-border);
+    border-radius: var(--ip-radius-md);
+    text-decoration: none;
+    transition: all var(--ip-transition);
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* Gradient overlay appears on hover */
+  .ip-action-btn::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, var(--ip-brand-primary), var(--ip-brand-primary-hover));
+    opacity: 0;
+    transition: opacity var(--ip-transition);
+    z-index: 0;
+  }
+
+  .ip-action-btn:hover,
+  .ip-action-btn:focus-visible {
+    border-color: var(--ip-brand-primary);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(236, 26, 42, 0.15);
+  }
+
+  .ip-action-btn:hover::before,
+  .ip-action-btn:focus-visible::before {
+    opacity: 1;
+  }
+
+  /* All elements turn white on hover */
+  .ip-action-btn:hover .ip-action-btn__icon,
+  .ip-action-btn:hover .ip-action-btn__label,
+  .ip-action-btn:hover .ip-action-btn__value,
+  .ip-action-btn:hover .ip-action-btn__arrow,
+  .ip-action-btn:focus-visible .ip-action-btn__icon,
+  .ip-action-btn:focus-visible .ip-action-btn__label,
+  .ip-action-btn:focus-visible .ip-action-btn__value,
+  .ip-action-btn:focus-visible .ip-action-btn__arrow {
+    color: var(--ip-surface);
+  }
+
+  .ip-action-btn:hover .ip-action-btn__icon,
+  .ip-action-btn:focus-visible .ip-action-btn__icon {
+    background-color: rgba(255, 255, 255, 0.2);
+  }
+
+  .ip-action-btn__icon {
+    width: 2rem;
+    height: 2rem;
+    color: var(--ip-brand-primary);
+    background-color: var(--ip-surface-subdued);
+    border-radius: var(--ip-radius-md);
+    padding: var(--ip-space-1);
+    flex-shrink: 0;
+    position: relative;
+    z-index: 1;
+    transition: all var(--ip-transition);
+  }
+
+  .ip-action-btn__content {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ip-space-1);
+    flex: 1;
+    min-width: 0;
+    position: relative;
+    z-index: 1;
+  }
+
+  .ip-action-btn__label {
+    font-size: var(--ip-font-size-sm);
+    font-weight: 600;
+    color: var(--ip-text-subdued);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    transition: color var(--ip-transition);
+  }
+
+  .ip-action-btn__value {
+    font-size: var(--ip-font-size-md);
+    font-weight: 600;
+    color: var(--ip-text);
+    word-break: break-all;
+    transition: color var(--ip-transition);
+  }
+
+  .ip-action-btn__arrow {
+    width: 1.25rem;
+    height: 1.25rem;
+    color: var(--ip-text-disabled);
+    flex-shrink: 0;
+    position: relative;
+    z-index: 1;
+    transition: all var(--ip-transition);
+  }
+
+  .ip-action-btn:hover .ip-action-btn__arrow,
+  .ip-action-btn:focus-visible .ip-action-btn__arrow {
+    transform: translateX(4px);
+  }
+
+  /* Responsive Design */
+  @media (max-width: 989px) {
+    .instructor-profile__content-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media (max-width: 749px) {
+    .instructor-profile__hero-grid {
+      text-align: center;
+    }
+
+    .ip-card__header,
+    .ip-card__content {
+      padding: var(--ip-space-4);
+    }
+
+    .ip-card__content--rich {
+      padding: var(--ip-space-5);
+    }
+  }
+
+  @media (max-width: 480px) {
+    .instructor-profile__container {
+      padding-inline: var(--ip-space-4);
+    }
+
+    .ip-badge-group,
+    .ip-contact-actions {
+      gap: var(--ip-space-2);
+    }
+  }
+
+  /* Accessibility Features */
+  @media (prefers-reduced-motion: reduce) {
+    .ip-card,
+    .ip-badge,
+    .ip-action-btn,
+    .instructor-profile__social-link,
+    .instructor-profile__image {
+      transition: none;
+    }
+
+    .ip-badge:hover,
+    .ip-action-btn:hover,
+    .ip-card:hover,
+    .instructor-profile__social-link:hover {
+      transform: none;
+    }
+
+    .ip-action-btn::before {
+      transition: none;
+    }
+  }
+
+  @media (prefers-contrast: high) {
+    .ip-card,
+    .ip-badge,
+    .ip-action-btn {
+      border-width: 2px;
+    }
+  }
+
+  /* Focus States for Keyboard Navigation */
+  .ip-action-btn:focus-visible,
+  .instructor-profile__social-link:focus-visible {
+    outline: 2px solid var(--ip-brand-primary);
+    outline-offset: 2px;
+    box-shadow: 0 0 0 4px rgba(236, 26, 42, 0.2);
+  }
+
+  /* Print Optimization */
+  @media print {
+    .instructor-profile__hero {
+      background: white;
+      color: black;
+      border-bottom: 3px solid black;
+    }
+
+    .ip-card {
+      page-break-inside: avoid;
+      box-shadow: none;
+      border: 1px solid black;
+    }
+
+    .ip-action-btn__arrow,
+    .instructor-profile__social {
+      display: none;
+    }
+  }
+{% endstyle %}
+
+{% schema %}
+  {
+    "name": "Instructor Profile",
+    "class": "section-instructor-profile",
+    "tag": "section",
+    "disabled_on": {
+      "groups": ["header", "footer"]
+    },
+    "settings": [
+      {
+        "type": "header",
+        "content": "Instructor Data"
+      },
+      {
+        "type": "text",
+        "id": "metaobject_handle",
+        "label": "Metaobject Handle",
+        "info": "Leave blank to use template context (instructors metaobject)"
+      },
+      {
+        "type": "header",
+        "content": "Display Options"
+      },
+      {
+        "type": "checkbox",
+        "id": "show_social_icons",
+        "label": "Show Social Media Links",
+        "default": true
+      }, {
+        "type": "header",
+        "content": "Hero Spacing"
+      }, {
+        "type": "range",
+        "id": "hero_padding_top",
+        "min": 0,
+        "max": 120,
+        "step": 4,
+        "unit": "px",
+        "label": "Top Padding",
+        "default": 60
+      }, {
+        "type": "range",
+        "id": "hero_padding_bottom",
+        "min": 0,
+        "max": 120,
+        "step": 4,
+        "unit": "px",
+        "label": "Bottom Padding",
+        "default": 60
+      }
+    ],
+    "presets": [
+      {
+        "name": "Instructor Profile"
+      }
+    ]
+  }
+{% endschema %}

@@ -1,0 +1,408 @@
+{% comment %}
+  Instructor Profiles Section
+
+  Structure:
+  - instructor-profiles.liquid (main section file, loads metaobject data, renders JSON)
+  - instructor-profiles.css (styles: Design system, responsive layout)
+  - instructor-profiles.js (filtering, search, state management, infinite scroll)
+  - instructor-filters.liquid (filter dropdowns structure)
+
+  Features:
+  - Multiple filter selection (Country, Specialties, Levels, Languages)
+  - Global search with suggestions
+  - Active filter pills (removable)
+  - URL-based state persistence (browser back/forward support)
+  - Infinite scroll with batch loading
+  - Mobile filter modal with accordion behavior
+  - Accessibility (ARIA, keyboard navigation)
+  - Image optimization (lazy loading, srcset)
+{% endcomment %}
+
+{% comment %} Configuration only - all data loads via Storefront API {% endcomment %}
+{% liquid
+  assign batch_size = section.settings.results_per_batch | default: 12
+
+  if batch_size < 6
+    assign batch_size = 6
+  elsif batch_size > 24
+    assign batch_size = 24
+  endif
+%}
+
+{% comment %} Performance: Preconnect to external resources {% endcomment %}
+<link
+  rel="preconnect"
+  href="https://cdn.shopify.com"
+  crossorigin><link rel="dns-prefetch" href="https://cdn.shopify.com">
+
+{% comment %} Performance: Preload critical CSS for faster loading {% endcomment %}
+{{ 'instructor-profiles.css' | asset_url | stylesheet_tag: preload: true }}
+
+{% comment %} Skip link for accessibility {% endcomment %}
+<a href="#instructor-profiles-results-{{ section.id }}" class="visually-hidden-focusable">
+  Skip to instructor results
+</a>
+
+<section
+  class="instructor-profiles-section"
+  data-section-id="{{ section.id }}"
+  style="
+    padding-top: {{ section.settings.padding_top }}px;
+    padding-bottom: {{ section.settings.padding_bottom }}px;
+  "
+  aria-label="Instructor directory">
+
+  {% comment %} Header - Full Width with Brand Secondary Background {% endcomment %}
+  {% if section.settings.heading != blank or section.settings.description != blank %}
+    <div class="instructor-profiles-header-wrapper">
+      <div class="instructor-profiles-container">
+        <div class="instructor-profiles-header" style="text-align: {{ section.settings.text_alignment }};">
+          {% if section.settings.heading != blank %}
+            <{{ section.settings.heading_size }} class="instructor-profiles-heading">
+              {{ section.settings.heading }}<span>..</span>
+            </{{ section.settings.heading_size }}>
+          {% endif %}
+
+          {% if section.settings.description != blank %}
+            <div class="instructor-profiles-description instructor-profiles-description--{{ section.settings.description_style }}">
+              {{ section.settings.description }}
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  {% endif %}
+
+  <div class="instructor-profiles-container">
+
+    {% comment %} Search and Filters {% endcomment %}
+    <div class="instructor-profiles-controls">
+
+      {% comment %} Global Search {% endcomment %}
+      <div class="instructor-profiles-search-wrapper">
+        <div class="instructor-profiles-search-input-group">
+          <svg
+            class="instructor-profiles-search-icon"
+            viewBox="0 0 20 20"
+            aria-hidden="true">
+            <path d="M8 12c-2.21 0-4-1.79-4-4s1.79-4 4-4 4 1.79 4 4-1.79 4-4 4zm9.707 4.293l-4.82-4.82C13.585 10.493 14 9.296 14 8c0-3.314-2.686-6-6-6S2 4.686 2 8s2.686 6 6 6c1.296 0 2.493-.415 3.473-1.113l4.82 4.82c.195.195.451.293.707.293s.512-.098.707-.293c.391-.391.391-1.023 0-1.414z" />
+          </svg>
+          <input
+            type="search"
+            class="instructor-profiles-search-input"
+            placeholder="Search by name, country, specialty, level, or language..."
+            aria-label="Search instructors"
+            data-instructor-search-input
+            autocomplete="off">
+          <button
+            class="instructor-profiles-search-clear"
+            aria-label="Clear search"
+            data-instructor-search-clear
+            hidden>
+            <svg viewBox="0 0 20 20">
+              <path d="M10 8.586L2.929 1.515 1.515 2.929 8.586 10l-7.071 7.071 1.414 1.414L10 11.414l7.071 7.071 1.414-1.414L11.414 10l7.071-7.071-1.414-1.414L10 8.586z" />
+            </svg>
+          </button>
+        </div>
+
+        {% comment %} Search Suggestions Dropdown {% endcomment %}
+        <div
+          class="instructor-profiles-search-suggestions"
+          data-instructor-suggestions
+          hidden>
+          <div class="instructor-profiles-suggestions-list" data-suggestions-list></div>
+        </div>
+    </div>
+
+      {% comment %} Horizontal Filters {% endcomment %}
+      {% render 'instructor-filters' %}
+
+    </div>
+
+    {% comment %} Active Filter Pills with Clear Button {% endcomment %}
+    <div
+      class="instructor-profiles-active-filters-wrapper"
+      data-active-filters-container
+      hidden>
+      {% comment %} Clear All Filters Button {% endcomment %}
+      <button class="instructor-profiles-clear-filters" data-clear-all-filters>
+        <svg viewBox="0 0 20 20" aria-hidden="true">
+          <path d="M10 8.586L2.929 1.515 1.515 2.929 8.586 10l-7.071 7.071 1.414 1.414L10 11.414l7.071 7.071 1.414-1.414L11.414 10l7.071-7.071-1.414-1.414L10 8.586z" />
+        </svg>
+        Clear all filters
+      </button>
+
+      {% comment %} Active Filter Pills Container {% endcomment %}
+      <div class="instructor-profiles-active-filters" data-active-filters></div>
+    </div>
+
+    {% comment %} ARIA live region for announcements {% endcomment %}
+    <div
+      class="visually-hidden"
+      role="status"
+      aria-live="polite"
+      aria-atomic="true"
+      data-instructor-announcer></div>
+
+    {% comment %} Results Counter with ARIA {% endcomment %}
+    <div class="instructor-profiles-results" id="instructor-profiles-results-{{ section.id }}">
+      <span
+        class="instructor-profiles-results-counter"
+        data-instructor-counter
+        role="status"
+        aria-live="polite"
+        aria-atomic="true">
+        Loading instructors...
+      </span>
+    </div>
+
+    {% comment %} Instructor Grid {% endcomment %}
+    <div
+      class="instructor-profiles-grid"
+      data-instructor-grid
+      role="region"
+      aria-label="Instructor search results">
+      {% comment %} Cards rendered by JavaScript {% endcomment %}
+    </div>
+
+    {% comment %} Loading Spinner {% endcomment %}
+    <div
+      class="instructor-profiles-loading"
+      data-instructor-loading
+      hidden>
+      <div class="instructor-profiles-spinner"></div>
+      <span class="instructor-profiles-loading-text">Loading more instructors...</span>
+    </div>
+
+    {% comment %} Scroll Trigger {% endcomment %}
+    <div class="instructor-profiles-scroll-trigger" data-instructor-trigger></div>
+
+    {% comment %} Empty State {% endcomment %}
+    <div
+      class="instructor-profiles-empty"
+      data-instructor-empty
+      hidden>
+      <svg class="instructor-profiles-empty-icon" viewBox="0 0 24 24">
+        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z" />
+      </svg>
+      <p class="instructor-profiles-empty-text">No instructors found</p>
+      <p class="instructor-profiles-empty-hint">Try adjusting your filters or search query</p>
+    </div>
+
+  </div>
+
+  {% comment %} Mobile Filter Button (Fixed within section) {% endcomment %}
+  <button
+    class="instructor-profiles-mobile-filter-btn"
+    aria-label="Open filters"
+    data-mobile-filter-btn>
+    <svg
+      aria-hidden="true"
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24">
+      <path
+        stroke="currentColor"
+        stroke-linecap="round"
+        stroke-width="2"
+        d="M6 4v10m0 0a2 2 0 1 0 0 4m0-4a2 2 0 1 1 0 4m0 0v2m6-16v2m0 0a2 2 0 1 0 0 4m0-4a2 2 0 1 1 0 4m0 0v10m6-16v10m0 0a2 2 0 1 0 0 4m0-4a2 2 0 1 1 0 4m0 0v2" />
+    </svg>
+    <span>Filters</span>
+    <span
+      class="instructor-profiles-mobile-filter-count"
+      data-mobile-filter-count
+      hidden>0</span>
+  </button>
+
+  {% comment %} Mobile Filter Modal {% endcomment %}
+  <div
+    class="instructor-profiles-mobile-modal"
+    data-mobile-modal
+    hidden>
+    <div class="instructor-profiles-mobile-modal-overlay" data-modal-overlay></div>
+    <div class="instructor-profiles-mobile-modal-content">
+
+      <div class="instructor-profiles-mobile-modal-header">
+        <h2>Filters</h2>
+        <button
+          class="instructor-profiles-mobile-modal-close"
+          aria-label="Close filters"
+          data-modal-close>
+          <svg viewBox="0 0 20 20">
+            <path d="M10 8.586L2.929 1.515 1.515 2.929 8.586 10l-7.071 7.071 1.414 1.414L10 11.414l7.071 7.071 1.414-1.414L11.414 10l7.071-7.071-1.414-1.414L10 8.586z" />
+          </svg>
+        </button>
+      </div>
+
+      <div class="instructor-profiles-mobile-modal-body" data-mobile-modal-body>
+        {% comment %} Filters will be moved here on mobile via JavaScript {% endcomment %}
+      </div>
+
+      <div class="instructor-profiles-mobile-modal-footer">
+        <button class="instructor-profiles-button instructor-profiles-button--secondary" data-clear-mobile-filters>
+          Clear all
+        </button>
+        <button class="instructor-profiles-button instructor-profiles-button--primary" data-apply-mobile-filters>
+          Show results
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+</section>
+
+{% comment %}
+  Configuration for Storefront API data loading
+
+  REQUIRED SHOPIFY STOREFRONT API SCOPES:
+  1. unauthenticated_read_metaobjects - Read metaobject definitions and entries
+  2. unauthenticated_read_content - Access MediaImage files (for profile images)
+
+  Without unauthenticated_read_content scope, images will load via fallback GID method
+  which is slower but still functional. For optimal performance, enable both scopes.
+
+  To configure: Shopify Admin > Settings > Apps and sales channels > Develop apps >
+  Your App > Configuration > Storefront API access scopes
+{% endcomment %}
+<script type="application/json" data-instructor-profiles-data>
+  {
+    "instructors": [],
+    "config": {
+      "batchSize": {{ batch_size | json }},
+      "sectionId": {{ section.id | json }},
+      "loadViaAPI": true,
+      "shopDomain": {{ shop.permanent_domain | json }},
+      "storefrontToken": {{ settings.storefront_api_token | json }}
+    }
+  }
+</script>
+
+<script src="{{ 'instructor-profiles.js' | asset_url }}" defer></script>
+
+{% comment %}
+  SEO structured data is generated dynamically by JavaScript after loading via Storefront API
+  This ensures accurate count and avoids Liquid 1000-item limit
+{% endcomment %}
+
+{% schema %}
+  {
+    "name": "Instructor Profiles",
+    "class": "section-instructor-profiles",
+    "tag": "section",
+    "settings": [
+      {
+        "type": "header",
+        "content": "Section Content"
+      },
+      {
+        "type": "text",
+        "id": "heading",
+        "label": "Heading",
+        "default": "Find an Instructor"
+      },
+      {
+        "type": "select",
+        "id": "heading_size",
+        "label": "Heading size",
+        "options": [
+          {
+            "value": "h1",
+            "label": "H1"
+          }, {
+            "value": "h2",
+            "label": "H2"
+          }, {
+            "value": "h3",
+            "label": "H3"
+          }
+        ],
+        "default": "h1"
+      },
+      {
+        "type": "richtext",
+        "id": "description",
+        "label": "Description"
+      }, {
+        "type": "select",
+        "id": "description_style",
+        "label": "Description style",
+        "options": [
+          {
+            "value": "body",
+            "label": "Body"
+          }, {
+            "value": "subtitle",
+            "label": "Subtitle"
+          }
+        ],
+        "default": "body"
+      }, {
+        "type": "select",
+        "id": "text_alignment",
+        "label": "Text alignment",
+        "options": [
+          {
+            "value": "left",
+            "label": "Left"
+          }, {
+            "value": "center",
+            "label": "Center"
+          }, {
+            "value": "right",
+            "label": "Right"
+          }
+        ],
+        "default": "left"
+      }, {
+        "type": "header",
+        "content": "Functionality"
+      }, {
+        "type": "range",
+        "id": "results_per_batch",
+        "label": "Profiles per load",
+        "min": 6,
+        "max": 24,
+        "step": 6,
+        "default": 12,
+        "info": "Number of profiles loaded at once (higher numbers may impact performance)"
+      }, {
+        "type": "checkbox",
+        "id": "randomize_order",
+        "label": "Randomize profile order",
+        "default": true,
+        "info": "Shuffle non-priority profiles on each page load for fairness"
+      }, {
+        "type": "header",
+        "content": "Spacing"
+      }, {
+        "type": "range",
+        "id": "padding_top",
+        "label": "Padding top",
+        "min": 0,
+        "max": 100,
+        "step": 4,
+        "unit": "px",
+        "default": 40
+      }, {
+        "type": "range",
+        "id": "padding_bottom",
+        "label": "Padding bottom",
+        "min": 0,
+        "max": 100,
+        "step": 4,
+        "unit": "px",
+        "default": 40
+      }
+    ],
+    "presets": [
+      {
+        "name": "Instructor Profiles",
+        "category": "Custom"
+      }
+    ],
+    "disabled_on": {
+      "groups": ["header", "footer"]
+    }
+  }
+{% endschema %}
